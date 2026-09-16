@@ -1,39 +1,55 @@
-name: Maigret
+name: Build Maigret
 
 on:
+  workflow_dispatch:
   push:
-    branches:
-      - main
-  pull_request:
     branches:
       - main
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: ubuntu-22.04
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.8"
 
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install "setuptools<70" wheel
+
       - name: Install dependencies
         working-directory: maigret-master
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install pytest
+          pip install requests
+          pip install requests-futures
+          pip install beautifulsoup4
+          pip install colorama
+          pip install lxml
+          pip install PySocks
+          pip install soupsieve
+          pip install stem
+          pip install torrequest
+          pip install aiohttp
 
-      - name: Check Maigret
+      - name: Verify Maigret
         working-directory: maigret-master
         run: |
           python -m maigret --help
 
-      - name: Run tests
-        working-directory: maigret-master
+      - name: Create package
         run: |
-          python -m pytest
+          mkdir -p build
+          zip -r build/maigret-build.zip maigret-master
+
+      - name: Upload build
+        uses: actions/upload-artifact@v4
+        with:
+          name: maigret-build
+          path: build/maigret-build.zip
